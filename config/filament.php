@@ -31,6 +31,11 @@ return [
 
     ],
 
+    'auth' => [
+        'guard' => 'web',
+        'user_model'=> \App\Models\MituAccount::class,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Default Filesystem Disk

@@ -14,7 +14,8 @@ return [
      |
      */
 
-    'enabled' => !empty($_COOKIE['xdebug']),
+    // 'enabled' => !empty($_COOKIE['xdebug']),
+    'enabled' => true,
     'except' => [
         'telescope*',
         'horizon*',
