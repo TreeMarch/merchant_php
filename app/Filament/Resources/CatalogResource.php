@@ -23,7 +23,15 @@ class CatalogResource extends Resource
     protected static ?string $model = MituProductCategory::class;
     protected static ?string $label = 'Danh mục sản phẩm';
     protected static ?string $navigationGroup = 'Quản lý sản phẩm';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Tổng số danh mục';
+    }
 
     public static function form(Form $form): Form
     {
@@ -36,6 +44,7 @@ class CatalogResource extends Resource
 
                 Toggle::make('is_active')
                     ->label('Trạng thái')
+                    ->inline(false)
                     ->default(true),
             ]);
     }
@@ -83,17 +92,17 @@ class CatalogResource extends Resource
             ])
             ->actions([
                 EditAction::make()
-                ->modal(true)
-                ->form([
-                    TextInput::make('name')
-                        ->label('Tên danh mục')
-                        ->required(),
+                    ->modal(true)
+                    ->form([
+                        TextInput::make('name')
+                            ->label('Tên danh mục')
+                            ->required(),
 
-                    Toggle::make('is_active')
-                        ->label('Trạng thái'),
-                ]),
+                        Toggle::make('is_active')
+                            ->label('Trạng thái'),
+                    ]),
 
-            DeleteAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -5,6 +5,8 @@ namespace App\Filament\Resources\CustomerResource\Pages;
 use App\Filament\Resources\CustomerResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Resources\CustomerResource\Widgets\CustomerStatsOverview;
+use Pest\ArchPresets\Custom;
 
 class ListCustomers extends ListRecords
 {
@@ -14,6 +16,13 @@ class ListCustomers extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            CustomerStatsOverview::class, // Add widget to header
         ];
     }
 }
