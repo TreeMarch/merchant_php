@@ -109,8 +109,24 @@
                             {{ number_format($order->total ?? 0, 0, ',', '.') }} VND
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {{ $order->average_score ?? 'Chưa có' }}
+                            @php
+                                $score = $order->average_score ?? 0;
+                                $maxStars = 5;
+                            @endphp
+
+                            @for ($i = 1; $i <= $maxStars; $i++)
+                                @if ($i <= $score)
+                                    <span class="text-yellow-400">★</span>
+                                @else
+                                    <span class="text-gray-400">☆</span>
+                                @endif
+                            @endfor
+
+                            @if ($score == 0)
+                                <span class="ml-2 text-sm text-gray-500">(Chưa có)</span>
+                            @endif
                         </td>
+
                         <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                             {{ $order->note ?? 'Chưa có' }}
                         </td>

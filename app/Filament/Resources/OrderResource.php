@@ -54,6 +54,7 @@ class OrderResource extends Resource
         return $form
             ->schema([
                 Toggle::make('is_active')
+                    ->inline(false)
                     ->label('Kích hoạt')
                     ->required(),
                 TextInput::make('provisional')
@@ -98,18 +99,18 @@ class OrderResource extends Resource
                 Textarea::make('invoice_note')
                     ->label('Ghi chú hóa đơn'),
 
-                Select::make('creator_id') // Relation to MituAccount
-                    ->label('Người tạo')
-                    ->relationship('mitu_account', 'name'),  // Assuming 'name' is the display field in MituAccount
+                Select::make('mutu_account','username') // Relation to MituAccount
+                    ->label('Người tạo'),
+                    // ->relationship('mitu_account', 'name'),  // Assuming 'name' is the display field in MituAccount
                 Select::make('table_id') // Relation to MituTable
-                    ->label('Bàn')
-                    ->relationship('mitu_table', 'name'),    // Assuming 'name' is the display field in MituTable
+                    ->label('Bàn'),
+                    // ->relationship('mitu_table', 'name'),    // Assuming 'name' is the display field in MituTable
                 Select::make('room_id') // Relation to MituTable, but acting as Room
-                    ->label('Phòng')
-                    ->relationship('mitu_table', 'name'),    // Assuming 'name' is the display field in MituTable
+                    ->label('Phòng'),
+                    // ->relationship('mitu_table', 'name'),    // Assuming 'name' is the display field in MituTable
                 Select::make('customer_id') // Relation to MituCustomer
-                    ->label('Khách hàng')
-                    ->relationship('mitu_customer', 'full_name'), // Assuming 'name' is the display field in MituCustomer
+                    ->label('Khách hàng'),
+                    // ->relationship('mitu_customer', 'full_name'), // Assuming 'name' is the display field in MituCustomer
             ]);
     }
 
@@ -158,14 +159,17 @@ class OrderResource extends Resource
                 TextColumn::make('VAT')
                     ->label('VAT')
                     ->numeric()
+                    ->suffix('%')
                     ->sortable(),
                 TextColumn::make('total')
                     ->label('Tổng tiền')
                     ->numeric()
+                    ->money('VND')
                     ->sortable(),
                 TextColumn::make('paid')
                     ->label('Đã trả')
                     ->numeric()
+                    ->money('VND')
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->label('Ngày cập nhật')
@@ -303,10 +307,11 @@ class OrderResource extends Resource
                         RepeatableEntry::make('mitu_order_details')
                             ->label('')
                             ->schema([
-                                Grid::make(3) // Adjust columns as needed
+                                Grid::make(4)
                                     ->schema([
                                         TextEntry::make('name')->label('Tên sản phẩm'),
                                         TextEntry::make('quantity')->label('Số lượng'),
+                                        TextEntry::make('price')->label('Đơn giá')->money('VND')->color('primary'),
                                         TextEntry::make('price_after_vip_gg_vat')->label('Thành tiền')->money('VND')->color('primary'),
                                     ]),
                             ])
@@ -319,28 +324,41 @@ class OrderResource extends Resource
                 // Section 4: Lịch sử thanh toán
                 Section::make('Lịch sử thanh toán')
                     ->schema([
-                        RepeatableEntry::make('payments')
+                        RepeatableEntry::make('mitu_payment_methods_detail')
                             ->label('Danh sách thanh toán')
                             ->schema([
-                                TextEntry::make('created_at')
-                                    ->label('Thời gian')
-                                    ->dateTime('d/m/Y H:i'),
+                                Grid::make(3)
+                                    ->schema([
+                                        TextEntry::make('created_at')
+                                            ->label('Thời gian')
+                                            ->dateTime('d/m/Y H:i'),
 
-                                TextEntry::make('mitu_payment_method.name')
-                                    ->label('Phương thức thanh toán'),
+                                        TextEntry::make('type')
+                                            ->label('Phương thức thanh toán')
+                                            ->formatStateUsing(function ($state) {
+                                                return match ($state) {
+                                                    1 => 'Tiền mặt',
+                                                    2 => 'Chuyển khoản',
+                                                    3 => 'Quẹt thẻ',
+                                                    default => 'Khác',
+                                                };
+                                            }),
 
-                                TextEntry::make('amount')
-                                    ->label('Số tiền')
-                                    ->money('VND')
-                                    ->color('success'),
+                                        TextEntry::make('paid')
+                                            ->label('Số tiền')
+                                            ->money('VND')
+                                            ->color('success'),
+                                    ])
+
                             ])
-                            ->columns(3)
-                            ->visible(fn($record) => $record?->payments?->isNotEmpty()),
+                            ->columnSpanFull()
+                            ->contained()
+                            ->visible(fn($record) => $record?->mitu_payment_methods_detail?->isNotEmpty()),
 
                         TextEntry::make('no_payment_message')
                             ->label('')
                             ->default('Không có lịch sử thanh toán.')
-                            ->visible(fn($record) => $record?->payments?->isEmpty())
+                            ->visible(fn($record) => $record?->mitu_payment_methods_detail?->isEmpty())
                             ->columnSpanFull(),
                     ])
                     ->collapsible(),

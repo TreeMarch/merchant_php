@@ -7,6 +7,7 @@ use App\Filament\Resources\ServiceResource\RelationManagers;
 use App\Models\MituService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\ComponentContainer;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,6 +20,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
 
 class ServiceResource extends Resource
 {
@@ -39,13 +42,12 @@ class ServiceResource extends Resource
         return 'Tổng số dịch vụ';
     }
 
-    public static function form(Form $form): Form
+    public static function getFormSchema(?MituService $record = null): array
     {
-        return $form->schema([
+        return [
             Section::make('Thông tin dịch vụ')
                 ->columns(2)
                 ->schema([
-                    // Cột 1: Tên dịch vụ + Trạng thái
                     Grid::make(2)->schema([
                         TextInput::make('name')
                             ->label('Tên dịch vụ')
@@ -59,7 +61,6 @@ class ServiceResource extends Resource
                             ->required(),
                     ]),
 
-                    // Cột 2: Giá + Đặt online
                     Grid::make(2)->schema([
                         TextInput::make('price')
                             ->label('Giá')
@@ -72,21 +73,17 @@ class ServiceResource extends Resource
                             ->label('Cho phép đặt online'),
                     ]),
 
-                    // Thời gian + Kích hoạt
                     TextInput::make('time')
                         ->label('Thời gian (phút)')
                         ->numeric()
-                        ->columnSpan(1)
                         ->required(),
 
-                    // Danh mục dịch vụ
                     Select::make('service_catalog_id')
                         ->label('Danh mục dịch vụ')
                         ->relationship('mitu_service_catalog', 'name')
                         ->searchable()
                         ->required(),
 
-                    // Hoa hồng + phần trăm hoa hồng
                     Grid::make(2)->schema([
                         TextInput::make('commission')
                             ->label('Hoa hồng (VNĐ)')
@@ -99,18 +96,15 @@ class ServiceResource extends Resource
                             ->step(0.1),
                     ]),
 
-                    // Video
                     TextInput::make('link_video')
-                        ->columnSpanFull()
-                        ->label('Link video'),
+                        ->label('Link video')
+                        ->columnSpanFull(),
 
-                    // Mô tả
                     Textarea::make('description')
                         ->label('Mô tả')
                         ->rows(4)
                         ->columnSpanFull(),
 
-                    // Hình ảnh
                     FileUpload::make('link_img')
                         ->label('Hình ảnh')
                         ->image()
@@ -118,10 +112,19 @@ class ServiceResource extends Resource
                         ->imageEditor()
                         ->directory('product-images')
                         ->panelLayout('grid')
-                        ->columnSpanFull(),
+                        ->columnSpanFull()
+                        ->preserveFilenames(), // Quan trọng để sửa không mất file cũ
                 ])
-        ]);
+        ];
     }
+
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema(self::getFormSchema());
+    }
+
+
 
     public static function table(Table $table): Table
     {
@@ -167,7 +170,27 @@ class ServiceResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Action::make('edit')
+                    ->label('Chỉnh sửa')
+                    ->icon('heroicon-o-pencil-square')
+                    ->modalHeading('Chỉnh sửa dịch vụ')
+                    ->modalSubheading('Cập nhật thông tin dịch vụ')
+                    ->form(fn(MituService $record) => self::getFormSchema($record)) // truyền record
+                    ->mountUsing(function (ComponentContainer $form, MituService $record) {
+                        // Gán dữ liệu vào form khi mở modal
+                        $form->fill($record->toArray());
+                    })
+                    ->action(function (array $data, MituService $record): void {
+                        $record->update($data);
+
+                        Notification::make()
+                            ->title('Dịch vụ đã được cập nhật')
+                            ->success()
+                            ->send();
+                    }),
+
+
+
                 Tables\Actions\DeleteAction::make() // Add delete action
                     ->requiresConfirmation()
                     ->action(fn($record) => $record->delete()), // Soft delete
@@ -190,7 +213,7 @@ class ServiceResource extends Resource
         return [
             'index' => Pages\ListServices::route('/'),
             'create' => Pages\CreateService::route('/create'),
-            'edit' => Pages\EditService::route('/{record}/edit'),
+            // 'edit' => Pages\EditService::route('/{record}/edit'),
         ];
     }
 }
